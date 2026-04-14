@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EDT LED Controller</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d1a;
+      color: #ccc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background: #12122a;
+      border-bottom: 1px solid #1e1e3f;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: bold;
+      color: #e94560;
+      letter-spacing: 1px;
+    }
+
+    header p {
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 2px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 16px;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      border: 1px solid;
+      transition: all 0.3s;
+    }
+    .status-bar.disconnected {
+      background: #2a0a0a;
+      border-color: #6a2a2a;
+    }
+    .status-bar.connected {
+      background: #0a2a0a;
+      border-color: #2a6a2a;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-bar.disconnected .dot { background: #F44336; }
+    .status-bar.connected .dot   { background: #4CAF50; }
+
+    /* LED indicator */
+    .led-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0 28px;
+    }
+    .led-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 16px;
+      color: #000;
+      margin-bottom: 10px;
+      transition: all 0.3s;
+    }
+    .led-circle.off {
+      background: #333;
+      border: 2px solid #555;
+      color: #888;
+    }
+    .led-circle.on {
+      background: #FFD700;
+      box-shadow: 0 0 30px 8px rgba(255, 215, 0, 0.5);
+    }
+    .led-caption { color: #666; font-size: 12px; }
+
+    /* Buttons */
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button:hover:not(:disabled) { opacity: 0.88; }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #btn-connect    { background: #1565c0; }
+    #btn-on         { background: #2e7d32; }
+    #btn-off        { background: #c62828; }
+    #btn-disconnect { background: #424242; }
+
+    .note {
+      background: #12122a;
+      border: 1px solid #1e1e3f;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+    .note strong { color: #aaa; }
+    .note code {
+      background: #1e1e3f;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #e94560;
+    }
+
+    /* Log */
+    #log {
+      margin-top: 16px;
+      background: #0a0a14;
+      border: 1px solid #1e1e3f;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 12px;
+      font-family: monospace;
+      color: #4CAF50;
+      height: 100px;
+      overflow-y: auto;
+    }
+    #log .err { color: #F44336; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>EDT LED Controller</h1>
+  <p>Web USB Serial — Arduino</p>
+</header>
+
+<div class="container">
+
+  <!-- Status -->
+  <div class="status-bar disconnected" id="status-bar">
+    <div class="dot"></div>
+    <span id="status-text">Not Connected</span>
+  </div>
+
+  <!-- LED Visual (shown when connected) -->
+  <div class="led-wrap" id="led-wrap" style="display:none;">
+    <div class="led-circle off" id="led-circle">OFF</div>
+    <span class="led-caption">LED Status</span>
+  </div>
+
+  <!-- Connect panel (shown when disconnected) -->
+  <div id="panel-disconnected">
+    <button id="btn-connect" onclick="connectSerial()">Connect to Arduino</button>
+    <div class="note">
+      <strong>Requirements:</strong><br>
+      • Use <strong>Chrome</strong> or <strong>Edge</strong> browser<br>
+      • Plug Arduino into laptop via <strong>USB cable</strong><br>
+      • Upload the Arduino sketch first<br>
+      • Baud rate: <code>9600</code>
+    </div>
+  </div>
+
+  <!-- Control panel (shown when connected) -->
+  <div id="panel-connected" style="display:none;">
+    <button id="btn-on" onclick="sendCommand('1')">Turn ON</button>
+    <button id="btn-off" onclick="sendCommand('0')">Turn OFF</button>
+    <button id="btn-disconnect" onclick="disconnectSerial()">Disconnect</button>
+  </div>
+
+  <!-- Log -->
+  <div id="log">&gt; Ready. Connect your Arduino to begin.</div>
+
+</div>
+
+<script>
+  let port = null;
+  let writer = null;
+
+  function log(msg, isError = false) {
+    const el = document.getElementById('log');
+    const line = document.createElement('div');
+    if (isError) line.className = 'err';
+    line.textContent = '> ' + msg;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setConnected(name) {
+    document.getElementById('status-bar').className = 'status-bar connected';
+    document.getElementById('status-text').textContent = 'Connected: ' + name;
+    document.getElementById('panel-disconnected').style.display = 'none';
+    document.getElementById('panel-connected').style.display = 'block';
+    document.getElementById('led-wrap').style.display = 'flex';
+  }
+
+  function setDisconnected() {
+    document.getElementById('status-bar').className = 'status-bar disconnected';
+    document.getElementById('status-text').textContent = 'Not Connected';
+    document.getElementById('panel-disconnected').style.display = 'block';
+    document.getElementById('panel-connected').style.display = 'none';
+    document.getElementById('led-wrap').style.display = 'none';
+    setLed(false);
+  }
+
+  function setLed(on) {
+    const circle = document.getElementById('led-circle');
+    circle.className = 'led-circle ' + (on ? 'on' : 'off');
+    circle.textContent = on ? 'ON' : 'OFF';
+  }
+
+  async function connectSerial() {
+    if (!('serial' in navigator)) {
+      log('Web Serial API not supported. Use Chrome or Edge browser.', true);
+      return;
+    }
+    try {
+      port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      writer = port.writable.getWriter();
+      const info = port.getInfo();
+      const name = `USB Serial (${info.usbVendorId ?? 'Arduino'})`;
+      setConnected(name);
+      log('Connected to Arduino at 9600 baud.');
+    } catch (e) {
+      log('Connection failed: ' + e.message, true);
+    }
+  }
+
+  async function sendCommand(cmd) {
+    if (!writer) { log('Not connected.', true); return; }
+    try {
+      const encoder = new TextEncoder();
+      await writer.write(encoder.encode(cmd));
+      const action = cmd === '1' ? 'ON' : 'OFF';
+      log('Sent: LED ' + action);
+      setLed(cmd === '1');
+    } catch (e) {
+      log('Send error: ' + e.message, true);
+    }
+  }
+
+  async function disconnectSerial() {
+    try {
+      if (writer) { writer.releaseLock(); writer = null; }
+      if (port)   { await port.close();   port = null; }
+    } catch (_) {}
+    setDisconnected();
+    log('Disconnected.');
+  }
+</script>
+
+</body>
+</html>
