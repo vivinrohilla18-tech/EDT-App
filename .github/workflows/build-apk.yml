@@ -57,15 +57,23 @@ jobs:
       - name: Create local.properties
         run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
+      - name: Check project structure
+        run: |
+          echo "Node version: $(node --version)"
+          echo "Gradle version: $(gradle --version | head -3)"
+          echo "Java version: $(java -version 2>&1 | head -1)"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          ls node_modules/@react-native/gradle-plugin 2>/dev/null && echo "gradle-plugin found" || echo "gradle-plugin MISSING"
+          ls node_modules/react-native-bluetooth-classic 2>/dev/null && echo "bluetooth-classic found" || echo "bluetooth-classic MISSING"
+
       - name: Build debug APK
         working-directory: android
-        run: |
-          set -o pipefail
-          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/gradle-build.log
-          echo "--- Build output (last 80 lines) ---"
-          tail -80 /tmp/gradle-build.log
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m"
+        run: gradle assembleDebug --no-daemon --info 2>&1
 
       - name: Find APK
+        if: always()
         run: find android -name "*.apk" 2>/dev/null || echo "No APK found"
 
       - uses: actions/upload-artifact@v4
