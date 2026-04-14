@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Android
+android/app/build/
+android/.gradle/
+android/local.properties
+*.keystore
+!debug.keystore
+
+# iOS
+ios/build/
+ios/Pods/
+ios/.xcode.env.local
+
+# Metro
+.metro-health-check*
+
+# Buck
+buck-out/
+\.buckd/
+*.keystore
+!debug.keystore
+
+# Xcode
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcworkspace/xcuserdata/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+
+# IDEs
+.idea/
+*.iml
+.DS_Store
