@@ -60,11 +60,17 @@ jobs:
       - name: Check project structure
         run: |
           echo "Node version: $(node --version)"
-          echo "Gradle version: $(gradle --version | head -3)"
-          echo "Java version: $(java -version 2>&1 | head -1)"
           echo "ANDROID_HOME: $ANDROID_HOME"
-          ls node_modules/@react-native/gradle-plugin 2>/dev/null && echo "gradle-plugin found" || echo "gradle-plugin MISSING"
-          ls node_modules/react-native-bluetooth-classic 2>/dev/null && echo "bluetooth-classic found" || echo "bluetooth-classic MISSING"
+          if ls node_modules/@react-native/gradle-plugin 2>/dev/null; then
+            echo "::notice::gradle-plugin found"
+          else
+            echo "::error::gradle-plugin MISSING"
+          fi
+          if ls node_modules/react-native-bluetooth-classic 2>/dev/null; then
+            echo "::notice::bluetooth-classic found"
+          else
+            echo "::error::bluetooth-classic MISSING"
+          fi
 
       - name: Build debug APK
         id: gradle_build
