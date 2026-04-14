@@ -24,7 +24,17 @@ jobs:
           node-version: '18'
 
       - name: Install JS dependencies
-        run: npm install --legacy-peer-deps
+        run: |
+          set -o pipefail
+          npm install --legacy-peer-deps 2>&1 | tee /tmp/npm.log
+
+      - name: Show npm error
+        if: failure()
+        run: |
+          echo "::error::=== NPM INSTALL FAILED ==="
+          grep -i "error\|ERESOLVE\|peer\|404\|not found" /tmp/npm.log | head -20 | while IFS= read -r line; do
+            echo "::error::$line"
+          done
 
       - name: Install Gradle 8.3
         run: |
