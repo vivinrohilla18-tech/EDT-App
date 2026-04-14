@@ -29,27 +29,17 @@ jobs:
       - name: Install JS dependencies
         run: npm install
 
-      - name: Download Gradle wrapper jar
-        run: |
-          mkdir -p android/gradle/wrapper
-          curl -fL -o android/gradle/wrapper/gradle-wrapper.jar \
-            "https://repo1.maven.org/maven2/org/gradle/gradle/8.3/gradle-8.3.jar" 2>/dev/null || \
-          curl -fL -o android/gradle/wrapper/gradle-wrapper.jar \
-            "https://github.com/gradle/gradle/raw/v8.3.0/gradle/wrapper/gradle-wrapper.jar" 2>/dev/null || true
-          chmod +x android/gradlew
-
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.3'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
 
-      - name: Install Android build tools and NDK
+      - name: Install Android SDK components
         run: |
-          yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager \
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
             "platforms;android-34" \
             "build-tools;34.0.0" \
             "ndk;25.1.8937393"
@@ -68,9 +58,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon --stacktrace
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/25.1.8937393
+        run: gradle assembleDebug --no-daemon --warning-mode all
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
