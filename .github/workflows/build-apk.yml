@@ -26,10 +26,11 @@ jobs:
       - name: Install JS dependencies
         run: npm install
 
-      - name: Setup Gradle 8.3
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.3'
+      - name: Install Gradle 8.3
+        run: |
+          curl -fL https://services.gradle.org/distributions/gradle-8.3-bin.zip -o /tmp/gradle.zip
+          unzip -qq /tmp/gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.3/bin" >> $GITHUB_PATH
 
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
@@ -58,7 +59,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: gradle assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon --stacktrace 2>&1 | tail -50
 
       - uses: actions/upload-artifact@v4
         with:
