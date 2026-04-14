@@ -110,12 +110,12 @@ jobs:
       - name: Show build error
         if: failure() && steps.gradle_build.outcome == 'failure'
         run: |
-          echo "::error::=== FIRST 60 LINES ==="
-          head -60 /tmp/build.log | while IFS= read -r line; do
+          echo "::error::=== LOG LINES 61-200 ==="
+          sed -n '61,200p' /tmp/build.log | while IFS= read -r line; do
             echo "::error::$line"
           done
-          echo "::error::=== ERROR SUMMARY ==="
-          grep -n "FAILURE\|What went wrong\|Caused by\|Exception:\|error:" /tmp/build.log | head -20 | while IFS= read -r line; do
+          echo "::error::=== GREP: FAILURE/EXCEPTION/ERROR ==="
+          grep -in "FAILURE\|exception\|error\|could not\|BUILD FAILED\|what went wrong\|caused by" /tmp/build.log | head -30 | while IFS= read -r line; do
             echo "::error::$line"
           done
 
