@@ -70,7 +70,14 @@ jobs:
         working-directory: android
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=512m"
-        run: gradle assembleDebug --no-daemon --info 2>&1
+        run: |
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee /tmp/build.log || {
+            echo "::error::=== GRADLE BUILD FAILED — last 30 lines ==="
+            tail -30 /tmp/build.log | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            exit 1
+          }
 
       - name: Find APK
         if: always()
