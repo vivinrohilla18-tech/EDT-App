@@ -24,7 +24,7 @@ jobs:
           node-version: '18'
 
       - name: Install JS dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Install Gradle 8.3
         run: |
