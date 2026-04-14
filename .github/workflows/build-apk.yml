@@ -36,6 +36,22 @@ jobs:
             echo "::error::$line"
           done
 
+      - name: Fix gradle plugin path
+        run: |
+          if [ ! -d "node_modules/@react-native/gradle-plugin" ]; then
+            PLUGIN=$(find node_modules -type d -name "gradle-plugin" -path "*/@react-native/gradle-plugin" 2>/dev/null | head -1)
+            if [ -n "$PLUGIN" ]; then
+              mkdir -p node_modules/@react-native
+              ln -sfn "$(pwd)/$PLUGIN" node_modules/@react-native/gradle-plugin
+              echo "::notice::Symlinked gradle-plugin from $PLUGIN"
+            else
+              echo "::error::@react-native/gradle-plugin not found anywhere in node_modules"
+              exit 1
+            fi
+          else
+            echo "::notice::gradle-plugin already at node_modules/@react-native/gradle-plugin"
+          fi
+
       - name: Install Gradle 8.3
         run: |
           curl -fL https://services.gradle.org/distributions/gradle-8.3-bin.zip -o /tmp/gradle.zip
